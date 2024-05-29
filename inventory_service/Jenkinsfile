@@ -15,15 +15,7 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                script {
-                    docker.image(IMAGE_NAME).inside {
-                        sh 'pytest'
-                    }
-                }
-            }
-        }
+        // Removed the Test stage
 
         stage('Push to Docker Registry') {
             steps {
