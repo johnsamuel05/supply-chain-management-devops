@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKERFILE_PATH = "/home/sam/Documents/app/inventory_service/Dockerfile"
+        DOCKERFILE_PATH = "path/to/dockerfile/Dockerfile" // Relative path to Dockerfile
         IMAGE_NAME = "inventory-service:${env.BUILD_NUMBER}"
     }
 
@@ -10,10 +10,12 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} /home/sam/Documents/app/inventory_service")
+                    // Build Docker image using Dockerfile in a different directory
+                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} .")
                 }
             }
         }
+    }
 
         stage('Test') {
             steps {
