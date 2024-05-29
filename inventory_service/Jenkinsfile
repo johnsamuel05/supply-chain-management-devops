@@ -10,11 +10,8 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Change directory to the inventory_service directory
-                    dir('inventory_service') {
-                        // Build Docker image using Dockerfile in the inventory_service directory
-                        docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} .")
-                    }
+                    // Build Docker image using Dockerfile in the inventory_service directory
+                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
                 }
             }
         }
