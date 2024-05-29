@@ -22,7 +22,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'samjohnoffl', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
                     script {
-                        def registry_url = "registry.hub.docker.com/"
+                        def registry_url = "hub.docker.com/"
                         sh "docker login -u $USER -p $PASSWORD ${registry_url}"
                         docker.withRegistry("http://${registry_url}", "samjohnoffl") {
                             docker.image(IMAGE_NAME).push("${env.BUILD_NUMBER}")
