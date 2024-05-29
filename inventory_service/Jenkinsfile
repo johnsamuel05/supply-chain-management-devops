@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKERFILE_PATH = "path/to/dockerfile/Dockerfile" // Relative path to Dockerfile
+        DOCKERFILE_PATH = "inventory_service/Dockerfile" // Relative path to Dockerfile
         IMAGE_NAME = "inventory-service:${env.BUILD_NUMBER}"
     }
 
