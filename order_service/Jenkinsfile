@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    docker.build("order-service:${env.BUILD_NUMBER}")
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                script {
+                    docker.image("order-service:${env.BUILD_NUMBER}").inside {
+                        sh 'pytest'
+                    }
+                }
+            }
+        }
+        stage('Push to Docker Registry') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub_id') {
+                        docker.image("order-service:${env.BUILD_NUMBER}").push()
+                    }
+                }
+            }
+        }
+    }
+}
