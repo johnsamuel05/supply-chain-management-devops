@@ -23,7 +23,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'samjohnoffl', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
                     script {
                         def registry_url = "registry.hub.docker.com/"
-                        bat "docker login -u $USER -p $PASSWORD ${registry_url}"
+                        sh "docker login -u $USER -p $PASSWORD ${registry_url}"
                         docker.withRegistry("http://${registry_url}", "samjohnoffl") {
                             docker.image(IMAGE_NAME).push("${env.BUILD_NUMBER}")
                             docker.image(IMAGE_NAME).push("latest")
