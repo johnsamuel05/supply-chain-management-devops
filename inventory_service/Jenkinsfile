@@ -9,12 +9,13 @@ pipeline {
 
     stages {
         stage('Build') {
-            steps {
-                script {
-                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
-                }
-            }
+           steps {
+               script {
+            docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
         }
+    }
+}
+
         
         stage('Unit Test') {
             steps {
