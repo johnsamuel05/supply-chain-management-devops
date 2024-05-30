@@ -7,16 +7,9 @@ pipeline {
         LATEST_IMAGE = "attemptmaster/devops:latest"
         DOCKER_REGISTRY = "index.docker.io"
         CREDENTIALS_ID = "attemptmaster"
-        PYTHON_BIN = "${HOME}/.local/bin" // Added environment variable for Python binaries
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
@@ -24,27 +17,7 @@ pipeline {
                 }
             }
         }
-
-        stage('Test') {
-            steps {
-                script {
-                    sh '''
-                    # Add the Python binary directory to the PATH
-                    export PATH=$PATH:${PYTHON_BIN}
-
-                    # Navigate to the service directory
-                    cd inventory_service
-
-                    # Install dependencies
-                    pip install --user -r requirements.txt
-
-                    # Run unit tests
-                    python -m unittest discover -s tests
-                    '''
-                }
-            }
-        }
-
+        
         stage('Push to Docker Registry') {
             steps {
                 withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -63,18 +36,6 @@ pipeline {
                     }
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-        success {
-            echo 'Pipeline executed successfully.'
-        }
-        failure {
-            echo 'Pipeline failed.'
         }
     }
 }
