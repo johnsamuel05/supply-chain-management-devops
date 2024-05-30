@@ -1,34 +1,40 @@
 pipeline {
     agent any
-
+    
     environment {
         DOCKERFILE_PATH = "inventory_service/Dockerfile"
-        IMAGE_NAME = "attemptmaster/devops:inventory-service-${env.BUILD_NUMBER}"
-        DOCKER_REPO = "attemptmaster/devops"
-        DOCKER_CREDENTIALS_ID = 'attemptmaster' // Assuming this is the correct credentials ID
+        IMAGE_NAME = "attemptmaster/devops:${env.BUILD_NUMBER}"
+        LATEST_IMAGE = "attemptmaster/devops:latest"
+        DOCKER_REGISTRY = "index.docker.io"
+        CREDENTIALS_ID = "attemptmaster"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/johnsamuel05/supply-chain-management-devops.git'
+                checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                script { _ ->
-                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
+                script {
+                    docker.build("${IMAGE_NAME}", "-f ${DOCKERFILE_PATH} inventory_service")
                 }
             }
         }
 
         stage('Test') {
             steps {
-                script { _ ->
+                script {
                     sh '''
-                    # Run unit tests
+                    # Navigate to the service directory
                     cd inventory_service
+
+                    # Install dependencies
+                    pip install -r requirements.txt
+
+                    # Run unit tests
                     python -m unittest discover -s tests
                     '''
                 }
@@ -37,12 +43,19 @@ pipeline {
 
         stage('Push to Docker Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
-                    script { _ ->
-                        sh "echo $PASSWORD | docker login -u $USER --password-stdin"
+                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    script {
+                        // Login to Docker Hub
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
+
+                        // Tag the image with the build number and latest tag
+                        sh "docker tag ${IMAGE_NAME} ${LATEST_IMAGE}"
+
+                        // Push the image with the build number tag
                         sh "docker push ${IMAGE_NAME}"
-                        sh "docker tag ${IMAGE_NAME} ${DOCKER_REPO}:latest"
-                        sh "docker push ${DOCKER_REPO}:latest"
+
+                        // Push the image with the latest tag
+                        sh "docker push ${LATEST_IMAGE}"
                     }
                 }
             }
