@@ -7,6 +7,7 @@ pipeline {
         LATEST_IMAGE = "attemptmaster/devops:latest"
         DOCKER_REGISTRY = "index.docker.io"
         CREDENTIALS_ID = "attemptmaster"
+        PYTHON_BIN = "${HOME}/.local/bin" // Added environment variable for Python binaries
     }
 
     stages {
@@ -28,11 +29,14 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    # Add the Python binary directory to the PATH
+                    export PATH=$PATH:${PYTHON_BIN}
+
                     # Navigate to the service directory
                     cd inventory_service
 
                     # Install dependencies
-                    pip install -r requirements.txt
+                    pip install --user -r requirements.txt
 
                     # Run unit tests
                     python -m unittest discover -s tests
