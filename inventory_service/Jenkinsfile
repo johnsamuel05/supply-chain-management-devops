@@ -3,37 +3,60 @@ pipeline {
     
     environment {
         DOCKERFILE_PATH = "inventory_service/Dockerfile"
-        IMAGE_NAME = "attemptmaster/devops:${env.BUILD_NUMBER}"
-        LATEST_IMAGE = "attemptmaster/devops:latest"
-        DOCKER_REGISTRY = "index.docker.io"
-        CREDENTIALS_ID = "attemptmaster"
+        IMAGE_NAME = "inventory-service:${env.BUILD_NUMBER}"
+        DOCKER_REPO = "attemptmaster/devops"
     }
 
     stages {
         stage('Build') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}", "-f ${DOCKERFILE_PATH} inventory_service")
+                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
                 }
             }
         }
         
+        stage('Unit Test') {
+            steps {
+                script {
+                    docker.image(IMAGE_NAME).inside {
+                        sh 'pytest tests/unit'
+                    }
+                }
+            }
+        }
+        
+        stage('Integration Test') {
+            steps {
+                script {
+                    docker.image(IMAGE_NAME).inside {
+                        sh 'pytest tests/integration'
+                    }
+                }
+            }
+        }
+
         stage('Push to Docker Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'attemptmaster', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
                     script {
-                        // Login to Docker Hub
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
-
-                        // Tag the image with the build number and latest tag
-                        sh "docker tag ${IMAGE_NAME} ${LATEST_IMAGE}"
-
-                        // Push the image with the build number tag
-                        sh "docker push ${IMAGE_NAME}"
-
-                        // Push the image with the latest tag
-                        sh "docker push ${LATEST_IMAGE}"
+                        def registry_url = "index.docker.io"
+                        sh "echo $PASSWORD | docker login -u $USER --password-stdin https://${registry_url}"
+                        docker.withRegistry("https://${registry_url}", 'attemptmaster') {
+                            docker.image(IMAGE_NAME).push("${env.BUILD_NUMBER}")
+                            docker.image(IMAGE_NAME).push("latest")
+                        }
                     }
+                }
+            }
+        }
+        
+        stage('Deploy to Production') {
+            steps {
+                script {
+                    // Add deployment script or commands here
+                    // For example:
+                    // sh 'kubectl apply -f deployment.yaml'
                 }
             }
         }
