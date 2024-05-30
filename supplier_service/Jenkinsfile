@@ -7,6 +7,7 @@ pipeline {
         LATEST_IMAGE = "attemptmaster/supplier-service:latest"
         DOCKER_REGISTRY = "index.docker.io"
         CREDENTIALS_ID = "attemptmaster"
+        KUBECONFIG = credentials('kubeconfig')
     }
 
     stages {
@@ -37,5 +38,15 @@ pipeline {
                 }
             }
         }
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig', contextName: '', namespace: 'default', serverUrl: '']) {
+                    script {
+                        sh 'kubectl apply -f k8s/supplier-service.yaml'
+                    }
+                }
+            }
+        }
+    }
     }
 }
