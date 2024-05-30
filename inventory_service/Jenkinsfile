@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKERFILE_PATH = "inventory_service/Dockerfile"
         IMAGE_NAME = "inventory-service:${env.BUILD_NUMBER}"
-        DOCKER_REPO = "samjohnoffl/devops"
+        DOCKER_REPO = "attemptmaster/devops"
     }
 
     stages {
@@ -18,11 +18,11 @@ pipeline {
         
         stage('Push to Docker Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'samjohnoffl', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'attemptmaster', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
                     script {
                         def registry_url = "index.docker.io"
                         sh "echo $PASSWORD | docker login -u $USER --password-stdin https://${registry_url}"
-                        docker.withRegistry("https://${registry_url}", 'samjohnoffl') {
+                        docker.withRegistry("https://${registry_url}", 'attemptmaster') {
                             docker.image(IMAGE_NAME).push("${env.BUILD_NUMBER}")
                             docker.image(IMAGE_NAME).push("latest")
                         }
