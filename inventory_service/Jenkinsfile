@@ -3,29 +3,36 @@ pipeline {
     
     environment {
         DOCKERFILE_PATH = "inventory_service/Dockerfile"
-        IMAGE_NAME = "inventory-service:${env.BUILD_NUMBER}"
-        DOCKER_REPO = "attemptmaster/devops"
+        IMAGE_NAME = "attemptmaster/devops:${env.BUILD_NUMBER}"
+        LATEST_IMAGE = "attemptmaster/devops:latest"
+        DOCKER_REGISTRY = "index.docker.io"
+        CREDENTIALS_ID = "attemptmaster"
     }
 
     stages {
         stage('Build') {
             steps {
                 script {
-                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
+                    docker.build("${IMAGE_NAME}", "-f ${DOCKERFILE_PATH} inventory_service")
                 }
             }
         }
         
         stage('Push to Docker Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'attemptmaster', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
                     script {
-                        def registry_url = "index.docker.io"
-                        sh "echo $PASSWORD | docker login -u $USER --password-stdin https://${registry_url}"
-                        docker.withRegistry("https://${registry_url}", 'attemptmaster') {
-                            docker.image(IMAGE_NAME).push("${env.BUILD_NUMBER}")
-                            docker.image(IMAGE_NAME).push("latest")
-                        }
+                        // Login to Docker Hub
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
+
+                        // Tag the image with the build number and latest tag
+                        sh "docker tag ${IMAGE_NAME} ${LATEST_IMAGE}"
+
+                        // Push the image with the build number tag
+                        sh "docker push ${IMAGE_NAME}"
+
+                        // Push the image with the latest tag
+                        sh "docker push ${LATEST_IMAGE}"
                     }
                 }
             }
