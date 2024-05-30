@@ -1,65 +1,63 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKERFILE_PATH = "inventory_service/Dockerfile"
-        IMAGE_NAME = "inventory-service:${env.BUILD_NUMBER}"
+        IMAGE_NAME = "attemptmaster/devops:inventory-service-${env.BUILD_NUMBER}"
         DOCKER_REPO = "attemptmaster/devops"
+        DOCKER_CREDENTIALS_ID = 'attemptmaster' // Assuming this is the correct credentials ID
     }
 
     stages {
-        stage('Build') {
-           steps {
-               script {
-            docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
-        }
-    }
-}
-
-        
-        stage('Unit Test') {
+        stage('Checkout') {
             steps {
-                script {
-                    docker.image(IMAGE_NAME).inside {
-                        sh 'pytest tests/unit'
-                    }
+                git 'https://github.com/johnsamuel05/supply-chain-management-devops.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script { _ ->
+                    docker.build(IMAGE_NAME, "-f ${DOCKERFILE_PATH} inventory_service")
                 }
             }
         }
-        
-        stage('Integration Test') {
+
+        stage('Test') {
             steps {
-                script {
-                    docker.image(IMAGE_NAME).inside {
-                        sh 'pytest tests/integration'
-                    }
+                script { _ ->
+                    sh '''
+                    # Run unit tests
+                    cd inventory_service
+                    python -m unittest discover -s tests
+                    '''
                 }
             }
         }
 
         stage('Push to Docker Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'attemptmaster', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
-                    script {
-                        def registry_url = "index.docker.io"
-                        sh "echo $PASSWORD | docker login -u $USER --password-stdin https://${registry_url}"
-                        docker.withRegistry("https://${registry_url}", 'attemptmaster') {
-                            docker.image(IMAGE_NAME).push("${env.BUILD_NUMBER}")
-                            docker.image(IMAGE_NAME).push("latest")
-                        }
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+                    script { _ ->
+                        sh "echo $PASSWORD | docker login -u $USER --password-stdin"
+                        sh "docker push ${IMAGE_NAME}"
+                        sh "docker tag ${IMAGE_NAME} ${DOCKER_REPO}:latest"
+                        sh "docker push ${DOCKER_REPO}:latest"
                     }
                 }
             }
         }
-        
-        stage('Deploy to Production') {
-            steps {
-                script {
-                    // Add deployment script or commands here
-                    // For example:
-                    // sh 'kubectl apply -f deployment.yaml'
-                }
-            }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline executed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
