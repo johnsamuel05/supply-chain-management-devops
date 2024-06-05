@@ -8,6 +8,8 @@ pipeline {
         DOCKER_REGISTRY = "index.docker.io"
         CREDENTIALS_ID = "attemptmaster"
         KUBECONFIG = credentials('kubeconfig')
+        KUBE_SERVER_URL = "https://localhost:8443" // Update with your Kubernetes API server URL
+        KUBE_CONTEXT = "minikube" // Update with your Kubernetes context name if different
     }
 
     stages {
@@ -41,7 +43,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                withKubeConfig([credentialsId: 'kubeconfig', contextName: '', namespace: 'default', serverUrl: '']) {
+                withKubeConfig([credentialsId: 'kubeconfig', contextName: KUBE_CONTEXT, namespace: 'default', serverUrl: KUBE_SERVER_URL]) {
                     script {
                         sh 'kubectl apply -f k8s/supplier-service.yaml'
                     }
